@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>GartenLog – Dein digitales Gartenbuch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,700;1,500;1,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --g900:#1B3D0A; --g700:#2D5A1B; --g600:#3F7226; --g500:#5A8A27;
+  --g300:#A8C97F; --g100:#EAF4D4; --g50:#F4FAE9;
+  --b500:#3B7FD4; --b100:#E8F2FF;
+  --o500:#E0793A; --o100:#FDF0E6;
+  --r500:#CC3B3B; --r100:#FFE8E8;
+  --cream:#F8F3EA; --cream2:#EDE8DD; --cream3:#DDD5C5;
+  --wh:#FFFFFF;
+  --t1:#1C2B0F; --t2:#4A5E3A; --t3:#7A8F6A; --t4:#AAB89A;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{font-size:16px;-webkit-tap-highlight-color:transparent}
+body{font-family:'Inter',system-ui,sans-serif;background:#C8C0B0;color:var(--t1);min-height:100vh;display:flex;justify-content:center}
+
+#app{background:var(--cream);width:100%;max-width:430px;min-height:100vh;position:relative;overflow-x:hidden;box-shadow:0 0 60px rgba(0,0,0,.25);display:flex;flex-direction:column}
+
+/* HEADER */
+.hdr{background:var(--g700);padding:14px 16px 12px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;flex-shrink:0}
+.hdr-logo{display:flex;align-items:center;gap:9px}
+.hdr-icon{width:34px;height:34px;flex-shrink:0}
+.hdr-name{font-family:'Lora',serif;font-style:italic;font-weight:700;font-size:20px;color:#fff;letter-spacing:-.3px}
+.hdr-date{font-size:11px;color:var(--g300);font-weight:500;text-align:right;line-height:1.5}
+
+/* VIEWS */
+.views{flex:1;overflow:hidden;position:relative}
+.view{display:none;padding:16px 14px 100px;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.view.on{display:block}
+
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--wh);border-top:1.5px solid var(--cream2);display:flex;z-index:100;box-shadow:0 -4px 20px rgba(45,90,27,.1)}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;padding:9px 4px 10px;border:none;background:none;cursor:pointer;gap:3px;color:var(--t4);font-size:10px;font-family:'Inter',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.3px;transition:color .15s;position:relative}
+.nb.on{color:var(--g700)}
+.nb svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.bdg{position:absolute;top:7px;right:calc(50% - 19px);background:var(--r500);color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;padding:0 4px;display:none;align-items:center;justify-content:center}
+
+/* SECTION HEADER */
+.sh{margin-bottom:14px}
+.sh-t{font-family:'Lora',serif;font-style:italic;font-size:22px;color:var(--g700);line-height:1.2}
+.sh-s{font-size:12px;color:var(--t3);margin-top:2px}
+
+/* TODAY BANNER */
+.banner{background:linear-gradient(135deg,var(--g900) 0%,var(--g700) 55%,var(--g600) 100%);border-radius:16px;padding:16px;margin-bottom:18px;position:relative;overflow:hidden}
+.banner::before{content:'';position:absolute;top:-24px;right:-24px;width:110px;height:110px;background:rgba(255,255,255,.05);border-radius:50%}
+.banner::after{content:'';position:absolute;bottom:-32px;right:16px;width:80px;height:80px;background:rgba(255,255,255,.04);border-radius:50%}
+.bn-label{font-size:11px;color:var(--g300);font-weight:700;text-transform:uppercase;letter-spacing:.5px;position:relative}
+.bn-title{font-family:'Lora',serif;font-size:19px;color:#fff;margin:4px 0 8px;line-height:1.25;position:relative}
+.bn-chips{display:flex;gap:8px;flex-wrap:wrap;position:relative}
+.bn-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.bn-chip.w{background:rgba(59,127,212,.22);color:#B8D8FF}
+.bn-chip.h{background:rgba(224,121,58,.22);color:#FFD8A8}
+.bn-chip.none{background:rgba(255,255,255,.1);color:rgba(255,255,255,.65);font-weight:400}
+
+/* TASK ITEM */
+.tl{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.ti{background:var(--wh);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 5px rgba(45,90,27,.08);border-left:3px solid transparent}
+.ti.w{border-left-color:var(--b500)}.ti.h{border-left-color:var(--o500)}
+.ti-ic{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.ti-ic.w{background:var(--b100)}.ti-ic.h{background:var(--o100)}
+.ti-info{flex:1;min-width:0}
+.ti-name{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ti-sub{font-size:11px;color:var(--t3);margin-top:2px}
+.ti-btn{padding:7px 12px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-family:'Inter',sans-serif;font-weight:700;white-space:nowrap;flex-shrink:0;transition:opacity .15s}
+.ti-btn.w{background:var(--b500);color:#fff}.ti-btn.h{background:var(--o500);color:#fff}
+.ti-btn:active{opacity:.8}
+
+/* PLANT CARDS */
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pc{background:var(--wh);border-radius:14px;padding:14px 12px 12px;box-shadow:0 2px 8px rgba(45,90,27,.09);cursor:pointer;transition:transform .12s,box-shadow .12s;position:relative;overflow:hidden}
+.pc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--g300);border-radius:14px 14px 0 0}
+.pc:active{transform:scale(.97)}
+.pc-em{font-size:30px;margin-bottom:6px;display:block;line-height:1}
+.pc-nm{font-weight:700;font-size:13px;color:var(--t1)}
+.pc-vr{font-size:11px;color:var(--t3);margin-top:1px;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* GROWTH BAR — signature element */
+.gbar{margin:8px 0 6px}
+.gbar-lbl{display:flex;justify-content:space-between;font-size:10px;color:var(--t4);margin-bottom:3px}
+.gbar-track{height:6px;background:var(--g100);border-radius:3px;overflow:hidden}
+.gbar-fill{height:100%;background:linear-gradient(90deg,var(--g300),var(--g500));border-radius:3px;transition:width .7s ease}
+
+/* CHIPS */
+.chip{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:700;margin-top:6px}
+.chip.now{background:var(--r100);color:var(--r500)}
+.chip.ok{background:var(--g100);color:var(--g700)}
+.chip.soon{background:var(--b100);color:var(--b500)}
+.chip.harvest{background:var(--o100);color:var(--o500)}
+
+/* CALENDAR */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.cal-mo{font-family:'Lora',serif;font-style:italic;font-size:22px;color:var(--g700)}
+.cal-nb{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--cream2);background:var(--wh);color:var(--g700);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;transition:background .15s}
+.cal-nb:hover{background:var(--g100)}
+.legend{display:flex;gap:14px;margin-bottom:14px}
+.leg{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--t3);font-weight:500}
+.leg-dot{width:8px;height:8px;border-radius:50%}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:14px}
+.cal-dh{text-align:center;font-size:10px;font-weight:700;color:var(--t4);padding:5px 2px;text-transform:uppercase;letter-spacing:.3px}
+.cday{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;gap:2px;transition:background .1s}
+.cday:hover:not(.empty):not(.today){background:var(--g100)}
+.cday.today{background:var(--g700)}.cday.today .cdn{color:#fff;font-weight:700}
+.cday.sel:not(.today){background:var(--g100);outline:2px solid var(--g300)}
+.cday.faded .cdn{color:var(--t4)}.cday.empty{cursor:default}
+.cdn{font-size:12px;font-weight:500;color:var(--t1);line-height:1}
+.cdots{display:flex;gap:2px}
+.cdot{width:5px;height:5px;border-radius:50%}
+.cdot.w{background:var(--b500)}.cdot.h{background:var(--o500)}
+.cal-ev-box{background:var(--wh);border-radius:14px;padding:14px;box-shadow:0 2px 8px rgba(45,90,27,.08)}
+.cal-ev-t{font-weight:700;font-size:13px;color:var(--t2);margin-bottom:10px}
+.ev-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--cream2);font-size:13px}
+.ev-row:last-child{border-bottom:none;padding-bottom:0}
+.ev-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.ev-dot.w{background:var(--b500)}.ev-dot.h{background:var(--o500)}
+.ev-nm{flex:1}.ev-tp{font-size:11px;color:var(--t3)}
+.no-ev{text-align:center;color:var(--t4);font-size:13px;padding:18px 0 8px}
+
+/* PLANTS LIST */
+.plist{display:flex;flex-direction:column;gap:10px}
+.pl-item{background:var(--wh);border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 6px rgba(45,90,27,.08);cursor:pointer;transition:background .1s}
+.pl-item:hover{background:var(--g50)}
+.pl-em{font-size:32px;flex-shrink:0;line-height:1}
+.pl-info{flex:1;min-width:0}
+.pl-nm{font-weight:700;font-size:15px}
+.pl-mt{font-size:12px;color:var(--t3);margin-top:2px}
+.pl-acts{display:flex;gap:6px;flex-shrink:0}
+.pl-ab{width:34px;height:34px;border-radius:8px;border:1.5px solid var(--cream2);background:var(--wh);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .1s}
+.pl-ab:hover{background:var(--cream)}.pl-ab.del:hover{background:var(--r100);border-color:var(--r500)}
+
+/* TASKS FILTER */
+.tf{display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px;-webkit-overflow-scrolling:touch}
+.tf::-webkit-scrollbar{display:none}
+.tf-btn{padding:7px 14px;border-radius:20px;border:1.5px solid var(--cream2);background:var(--wh);cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;font-weight:600;color:var(--t2);white-space:nowrap;transition:all .15s;flex-shrink:0}
+.tf-btn.on{background:var(--g700);border-color:var(--g700);color:#fff}
+.tds{margin-bottom:18px}
+.tdl{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.tdl span{color:var(--g700)}
+
+/* MODAL OVERLAY */
+.mkov{position:fixed;inset:0;background:rgba(28,43,15,.55);z-index:200;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+.mkov.open{display:flex}
+.mkbox{background:var(--wh);border-radius:22px 22px 0 0;padding:20px 16px 48px;width:100%;max-width:430px;max-height:92vh;overflow-y:auto;animation:sld .3s cubic-bezier(.32,.72,0,1)}
+@keyframes sld{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+.mk-hdl{width:36px;height:4px;background:var(--cream2);border-radius:2px;margin:0 auto 18px}
+.mk-t{font-family:'Lora',serif;font-style:italic;font-size:22px;color:var(--g700);margin-bottom:18px}
+.mkbox::-webkit-scrollbar{width:4px}.mkbox::-webkit-scrollbar-thumb{background:var(--cream2);border-radius:2px}
+
+/* FORM */
+.fg{margin-bottom:14px}
+.fl{display:block;font-size:11px;font-weight:700;color:var(--t2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+.fi{width:100%;padding:11px 13px;border:1.5px solid var(--cream2);border-radius:10px;font-family:'Inter',sans-serif;font-size:15px;color:var(--t1);background:var(--cream);outline:none;transition:border-color .2s,background .2s;-webkit-appearance:none}
+.fi:focus{border-color:var(--g500);background:#fff}
+textarea.fi{resize:vertical;min-height:64px;font-size:14px;line-height:1.4}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.egrid{display:grid;grid-template-columns:repeat(8,1fr);gap:5px}
+.egbtn{aspect-ratio:1;font-size:20px;border:2px solid transparent;border-radius:8px;cursor:pointer;background:var(--cream);display:flex;align-items:center;justify-content:center;transition:all .12s;line-height:1}
+.egbtn:hover{background:var(--g100)}.egbtn.on{border-color:var(--g500);background:var(--g100)}
+.btn-p{width:100%;padding:14px;background:var(--g700);color:#fff;border:none;border-radius:12px;font-family:'Inter',sans-serif;font-size:15px;font-weight:700;cursor:pointer;margin-top:10px;transition:background .15s}
+.btn-p:hover{background:var(--g900)}
+.btn-s{width:100%;padding:12px;background:transparent;color:var(--t2);border:1.5px solid var(--cream2);border-radius:12px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px}
+.btn-s:hover{background:var(--cream)}
+.btn-d{width:100%;padding:12px;background:var(--r100);color:var(--r500);border:none;border-radius:12px;font-family:'Inter',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px}
+
+/* FAB */
+.fab{position:fixed;bottom:80px;right:max(16px, calc((100vw - 430px)/2 + 16px));width:54px;height:54px;border-radius:50%;background:var(--g700);color:#fff;border:none;font-size:28px;line-height:1;cursor:pointer;box-shadow:0 4px 18px rgba(45,90,27,.45);display:flex;align-items:center;justify-content:center;z-index:50;transition:transform .15s,box-shadow .15s}
+.fab:hover{transform:scale(1.06);box-shadow:0 6px 24px rgba(45,90,27,.55)}
+.fab:active{transform:scale(.95)}
+
+/* EMPTY STATE */
+.es{text-align:center;padding:48px 24px}
+.es-em{font-size:52px;margin-bottom:14px}
+.es-t{font-family:'Lora',serif;font-size:18px;color:var(--t2);margin-bottom:6px}
+.es-s{font-size:13px;color:var(--t3);line-height:1.5}
+
+/* DETAIL */
+.det-hdr{display:flex;gap:14px;align-items:flex-start;margin-bottom:18px}
+.det-em{font-size:50px;flex-shrink:0;line-height:1}
+.det-nm{font-family:'Lora',serif;font-size:24px;color:var(--t1);font-weight:700;line-height:1.1}
+.det-vr{font-size:14px;color:var(--t3);margin-top:4px}
+.det-sec{margin-bottom:16px}
+.det-lbl{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
+.det-row{display:flex;gap:8px;flex-wrap:wrap}
+.dic{background:var(--cream);border-radius:8px;padding:8px 12px;flex:1;min-width:90px}
+.dic-l{font-size:10px;color:var(--t4);font-weight:600;text-transform:uppercase}
+.dic-v{font-size:14px;font-weight:700;color:var(--t1);margin-top:2px}
+
+/* GROWTH STAGES */
+.stages{display:flex;align-items:center;margin:10px 0}
+.stg{flex:1;text-align:center;position:relative}
+.stg+.stg::before{content:'';position:absolute;top:14px;left:calc(-50%);width:100%;height:2px;background:var(--cream2);z-index:0}
+.stg.done+.stg.done::before,.stg.done+.stg.act::before{background:var(--g300)}
+.stg-dot{width:28px;height:28px;border-radius:50%;background:var(--cream2);display:flex;align-items:center;justify-content:center;font-size:14px;margin:0 auto 4px;position:relative;z-index:1}
+.stg.done .stg-dot{background:var(--g100)}.stg.act .stg-dot{background:var(--g500);box-shadow:0 0 0 4px var(--g100)}
+.stg-lbl{font-size:9px;color:var(--t4);font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.stg.done .stg-lbl{color:var(--g700)}.stg.act .stg-lbl{color:var(--g500)}
+.notes-box{background:var(--cream);border-radius:10px;padding:12px;font-size:13px;color:var(--t2);line-height:1.5;min-height:52px}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-logo">
+    <svg class="hdr-icon" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="34" height="34" rx="9" fill="#5A8A27"/>
+      <path d="M17 7C17 7 25.5 11.5 25.5 18.5C25.5 23.2 22 26.8 17 26.8C12 26.8 8.5 23.2 8.5 18.5C8.5 11.5 17 7 17 7Z" fill="white" opacity="0.95"/>
+      <line x1="12.5" y1="16" x2="21.5" y2="16" stroke="#2D5A1B" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="12.5" y1="19.5" x2="21.5" y2="19.5" stroke="#2D5A1B" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="12.5" y1="23" x2="18" y2="23" stroke="#2D5A1B" stroke-width="1.5" stroke-linecap="round"/>
+      <circle cx="11" cy="16" r="1.6" fill="#3B7FD4"/>
+      <circle cx="11" cy="19.5" r="1.6" fill="#E0793A"/>
+      <circle cx="11" cy="23" r="1.6" fill="#3B7FD4"/>
+    </svg>
+    <span class="hdr-name">GartenLog</span>
+  </div>
+  <div class="hdr-date" id="hdrDate"></div>
+</header>
+
+<div class="views">
+<!-- VIEW: ÜBERSICHT -->
+<section class="view on" id="v-dash">
+  <div class="banner">
+    <div class="bn-label">Heute</div>
+    <div class="bn-title" id="bn-title">Lade Gartendaten…</div>
+    <div class="bn-chips" id="bn-chips"></div>
+  </div>
+  <div id="tday-sec" style="display:none">
+    <div class="sh"><div class="sh-t">Aufgaben heute</div></div>
+    <div class="tl" id="tday-list"></div>
+  </div>
+  <div class="sh"><div class="sh-t">Mein Garten</div><div class="sh-s" id="garden-sub"></div></div>
+  <div class="pgrid" id="dash-grid"></div>
+</section>
+
+<!-- VIEW: KALENDER -->
+<section class="view" id="v-cal">
+  <div class="sh"><div class="sh-t">Gartenkalender</div><div class="sh-s">Gieß- &amp; Erntetermine im Überblick</div></div>
+  <div class="legend">
+    <div class="leg"><div class="leg-dot" style="background:var(--b500)"></div>Gießen</div>
+    <div class="leg"><div class="leg-dot" style="background:var(--o500)"></div>Ernte</div>
+  </div>
+  <div class="cal-nav">
+    <button class="cal-nb" onclick="calPrev()">‹</button>
+    <div class="cal-mo" id="cal-mo"></div>
+    <button class="cal-nb" onclick="calNext()">›</button>
+  </div>
+  <div class="cal-grid" id="cal-grid"></div>
+  <div class="cal-ev-box">
+    <div class="cal-ev-t" id="cal-ev-t">Wähle einen Tag</div>
+    <div id="cal-ev-list"><div class="no-ev">Tippe auf einen Tag, um Ereignisse zu sehen.</div></div>
+  </div>
+</section>
+
+<!-- VIEW: PFLANZEN -->
+<section class="view" id="v-plants">
+  <div class="sh"><div class="sh-t">Meine Pflanzen</div><div class="sh-s" id="plants-sub"></div></div>
+  <div id="plant-list-el"></div>
+</section>
+
+<!-- VIEW: AUFGABEN -->
+<section class="view" id="v-tasks">
+  <div class="sh"><div class="sh-t">Aufgaben</div><div class="sh-s">Nächste 14 Tage</div></div>
+  <div class="tf">
+    <button class="tf-btn on" data-f="all" onclick="setFilter(this)">Alle</button>
+    <button class="tf-btn" data-f="water" onclick="setFilter(this)">💧 Gießen</button>
+    <button class="tf-btn" data-f="harvest" onclick="setFilter(this)">🌾 Ernten</button>
+  </div>
+  <div id="task-list-el"></div>
+</section>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bnav">
+  <button class="nb on" id="nb-dash" onclick="nav('dash')">
+    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Übersicht
+  </button>
+  <button class="nb" id="nb-cal" onclick="nav('cal')">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    Kalender
+  </button>
+  <button class="nb" id="nb-plants" onclick="nav('plants')">
+    <svg viewBox="0 0 24 24"><path d="M12 22V12"/><path d="M12 12c0 0-4-4-8-6 0 0 2 4 2 6s2 4 6 4"/><path d="M12 12c0 0 4-4 8-6 0 0-2 4-2 6s-2 4-6 4"/></svg>
+    Pflanzen
+  </button>
+  <button class="nb" id="nb-tasks" onclick="nav('tasks')">
+    <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    Aufgaben
+    <span class="bdg" id="task-bdg">0</span>
+  </button>
+</nav>
+
+<!-- FAB -->
+<button class="fab" onclick="openAdd()" title="Pflanze hinzufügen">+</button>
+
+<!-- MODAL: ADD/EDIT -->
+<div class="mkov" id="plant-modal" onclick="if(event.target===this)closeMk()">
+  <div class="mkbox">
+    <div class="mk-hdl"></div>
+    <div class="mk-t" id="mk-title">Neue Pflanze</div>
+    <div class="fg"><label class="fl">Symbol</label><div class="egrid" id="emoji-grid"></div></div>
+    <div class="fr">
+      <div class="fg"><label class="fl" for="in-name">Name *</label><input class="fi" id="in-name" type="text" placeholder="Tomaten"></div>
+      <div class="fg"><label class="fl" for="in-var">Sorte</label><input class="fi" id="in-var" type="text" placeholder="Cherry"></div>
+    </div>
+    <div class="fg"><label class="fl" for="in-bed">Standort / Beet</label><input class="fi" id="in-bed" type="text" placeholder="z.B. Beet Süd, Hochbeet"></div>
+    <div class="fr">
+      <div class="fg"><label class="fl" for="in-sow">Aussaat</label><input class="fi" id="in-sow" type="date"></div>
+      <div class="fg"><label class="fl" for="in-pln">Gepflanzt</label><input class="fi" id="in-pln" type="date"></div>
+    </div>
+    <div class="fg"><label class="fl" for="in-wtr">Gießen alle (Tage)</label><input class="fi" id="in-wtr" type="number" min="1" max="30" placeholder="2"></div>
+    <div class="fr">
+      <div class="fg"><label class="fl" for="in-hs">Ernte ab</label><input class="fi" id="in-hs" type="date"></div>
+      <div class="fg"><label class="fl" for="in-he">Ernte bis</label><input class="fi" id="in-he" type="date"></div>
+    </div>
+    <div class="fg"><label class="fl" for="in-nt">Notizen</label><textarea class="fi" id="in-nt" placeholder="Tipps, Standort, Besonderheiten…"></textarea></div>
+    <input type="hidden" id="in-id">
+    <button class="btn-p" onclick="savePlant()">Pflanze speichern</button>
+    <button class="btn-s" onclick="closeMk()">Abbrechen</button>
+    <button class="btn-d" id="del-btn" style="display:none" onclick="doDelete()">Pflanze löschen</button>
+  </div>
+</div>
+
+<!-- MODAL: DETAIL -->
+<div class="mkov" id="det-modal" onclick="if(event.target===this)closeDet()">
+  <div class="mkbox" id="det-box"></div>
+</div>
+
+<script>
+// ============================================================
+// CONSTANTS
+// ============================================================
+const EMOJIS = ['🍅','🥕','🥦','🥒','🥬','🌽','🫑','🧅','🧄','🍋','🍇','🍓','🍒','🍑','🍐','🫛','🌿','🌾','🌻','🌸','🪴','🥔','🫐','🍎','🍊','🍉','🍈','🌱','🌵','🫙'];
+const MONTHS = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+const DAYS = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+const DLONG = ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+
+// ============================================================
+// STATE
+// ============================================================
+let plants = [];
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+let calSelDate = null;
+let selEm = '🌱';
+let tFilter = 'all';
+
+// ============================================================
+// UTILS
+// ============================================================
+function todayS() {
+  const d = new Date();
+  return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`;
+}
+function p2(n){return String(n).padStart(2,'0')}
+function toISO(d){return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`}
+function parseD(s){if(!s)return null;const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
+function diffD(a,b){return Math.floor((b-a)/86400000)}
+function addD(s,n){const d=parseD(s);d.setDate(d.getDate()+n);return toISO(d)}
+function fmtD(s){if(!s)return '–';return parseD(s).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'})}
+function fmtDs(s){if(!s)return '–';return parseD(s).toLocaleDateString('de-DE',{day:'numeric',month:'short'})}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).substr(2,4)}
+
+// ============================================================
+// DATA
+// ============================================================
+function loadData() {
+  const s = localStorage.getItem('gartenlog_v2');
+  if (s) {try{plants=JSON.parse(s);return}catch(e){}}
+  initDemo();
+}
+function saveData(){localStorage.setItem('gartenlog_v2',JSON.stringify(plants))}
+
+function initDemo() {
+  const t = todayS();
+  plants = [
+    {id:uid(),emoji:'🍅',name:'Tomaten',variety:'Cherry Roma',bed:'Beet Süd',
+     sowDate:addD(t,-91),plantDate:addD(t,-55),wateringInterval:2,lastWatered:addD(t,-2),
+     harvestStart:addD(t,17),harvestEnd:addD(t,93),
+     notes:'Sonniger Platz. Regelmäßig düngen. Geiztriebe alle 2 Wochen entfernen.',status:'active'},
+    {id:uid(),emoji:'🥕',name:'Karotten',variety:'Nantaise',bed:'Beet Nord',
+     sowDate:addD(t,-96),plantDate:addD(t,-96),wateringInterval:3,lastWatered:addD(t,-1),
+     harvestStart:addD(t,31),harvestEnd:addD(t,77),
+     notes:'Tief lockern vor der Aussaat. Ausdünnen wenn 5 cm hoch.',status:'active'},
+    {id:uid(),emoji:'🥬',name:'Salat',variety:'Batavia',bed:'Hochbeet',
+     sowDate:null,plantDate:addD(t,-44),wateringInterval:1,lastWatered:addD(t,-1),
+     harvestStart:addD(t,-5),harvestEnd:addD(t,31),
+     notes:'Äußere Blätter ernten – Pflanze kann mehrfach abgeerntet werden.',status:'active'},
+    {id:uid(),emoji:'🥒',name:'Zucchini',variety:'Black Beauty',bed:'Beet West',
+     sowDate:addD(t,-55),plantDate:addD(t,-30),wateringInterval:2,lastWatered:addD(t,-1),
+     harvestStart:addD(t,17),harvestEnd:addD(t,79),
+     notes:'Viel Platz lassen. Früh ernten für zarte Früchte.',status:'active'},
+    {id:uid(),emoji:'🍓',name:'Erdbeeren',variety:'Senga Sengana',bed:'Beet Ost',
+     sowDate:null,plantDate:addD(t,-105),wateringInterval:2,lastWatered:addD(t,-2),
+     harvestStart:addD(t,-4),harvestEnd:addD(t,26),
+     notes:'Stroh unter die Früchte legen. Ausläufer regelmäßig entfernen.',status:'active'},
+  ];
+  saveData();
+}
+
+// ============================================================
+// LOGIC
+// ============================================================
+function isWaterDay(p, ds) {
+  if (!p.wateringInterval || p.status !== 'active') return false;
+  const base = p.lastWatered || p.plantDate || p.sowDate;
+  if (!base) return false;
+  const diff = diffD(parseD(base), parseD(ds));
+  return diff > 0 && diff % p.wateringInterval === 0;
+}
+
+function isHarvestActive(p, ds) {
+  if (p.status !== 'active' || !p.harvestStart || !p.harvestEnd) return false;
+  return ds >= p.harvestStart && ds <= p.harvestEnd;
+}
+
+function nextWaterDate(p) {
+  if (!p.wateringInterval || p.status !== 'active') return null;
+  const base = p.lastWatered || p.plantDate || p.sowDate;
+  if (!base) return null;
+  const bd = parseD(base), td = parseD(todayS());
+  let next = new Date(bd);
+  next.setDate(next.getDate() + p.wateringInterval);
+  while (next < td) next.setDate(next.getDate() + p.wateringInterval);
+  return toISO(next);
+}
+
+function daysToWater(p) {
+  const nd = nextWaterDate(p);
+  return nd ? diffD(parseD(todayS()), parseD(nd)) : null;
+}
+
+function growthPct(p) {
+  if (!p.plantDate || !p.harvestStart) return 40;
+  const s = parseD(p.plantDate), e = parseD(p.harvestStart), n = parseD(todayS());
+  if (n <= s) return 2;
+  if (n >= e) return 100;
+  return Math.min(98, Math.round(diffD(s,n)/diffD(s,e)*100));
+}
+
+function todayTasks() {
+  const t = todayS(), tasks = [];
+  plants.forEach(p => {
+    if (isWaterDay(p,t)) tasks.push({type:'water',plant:p});
+    if (isHarvestActive(p,t)) tasks.push({type:'harvest',plant:p});
+  });
+  return tasks;
+}
+
+function upcomingTasks(days=14) {
+  const today = todayS(), tasks = [];
+  for (let i=0;i<=days;i++) {
+    const ds = addD(today,i);
+    plants.forEach(p => {
+      if (p.status!=='active') return;
+      if (isWaterDay(p,ds)) tasks.push({type:'water',plant:p,date:ds,dfi:i});
+      if (ds===p.harvestStart) tasks.push({type:'harvest-start',plant:p,date:ds,dfi:i});
+    });
+  }
+  return tasks;
+}
+
+function eventsForDate(ds) {
+  const evs = [];
+  plants.forEach(p => {
+    if (p.status!=='active') return;
+    if (isWaterDay(p,ds)) evs.push({type:'w',plant:p,label:'Gießen'});
+    if (p.harvestStart&&p.harvestEnd&&ds>=p.harvestStart&&ds<=p.harvestEnd) {
+      const lbl = ds===p.harvestStart?'Ernte beginnt':ds===p.harvestEnd?'Letzter Erntetag':'Im Erntezeitraum';
+      evs.push({type:'h',plant:p,label:lbl});
+    }
+  });
+  return evs;
+}
+
+// ============================================================
+// RENDER: DASHBOARD
+// ============================================================
+function renderDash() {
+  const tt = todayTasks();
+  const wt = tt.filter(t=>t.type==='water'), ht = tt.filter(t=>t.type==='harvest');
+
+  const title = document.getElementById('bn-title');
+  const chips = document.getElementById('bn-chips');
+  if (!tt.length) {
+    title.textContent = 'Alles im grünen Bereich! 🌿';
+    chips.innerHTML = '<span class="bn-chip none">Keine Aufgaben für heute</span>';
+  } else {
+    title.textContent = `${tt.length} Aufgabe${tt.length>1?'n':''} für heute`;
+    chips.innerHTML = (wt.length?`<span class="bn-chip w">💧 ${wt.length} Gießen</span>`:'') +
+      (ht.length?`<span class="bn-chip h">🌾 ${ht.length} Ernten</span>`:'');
+  }
+
+  const tsec = document.getElementById('tday-sec'), tlist = document.getElementById('tday-list');
+  if (tt.length) {
+    tsec.style.display='block';
+    tlist.innerHTML = tt.map(t=>`
+      <div class="ti ${t.type==='water'?'w':'h'}">
+        <div class="ti-ic ${t.type==='water'?'w':'h'}">${t.type==='water'?'💧':'🌾'}</div>
+        <div class="ti-info">
+          <div class="ti-name">${t.plant.emoji} ${t.plant.name}</div>
+          <div class="ti-sub">${t.type==='water'?`Gießen · alle ${t.plant.wateringInterval} Tage`:`Erntezeit: ${fmtDs(t.plant.harvestStart)} – ${fmtDs(t.plant.harvestEnd)}`}</div>
+        </div>
+        ${t.type==='water'?`<button class="ti-btn w" onclick="doWater('${t.plant.id}');event.stopPropagation()">✓ Gegossen</button>`:''}
+        ${t.type==='harvest'?`<button class="ti-btn h" onclick="openDet('${t.plant.id}');event.stopPropagation()">Details</button>`:''}
+      </div>`).join('');
+  } else { tsec.style.display='none'; }
+
+  const active = plants.filter(p=>p.status==='active');
+  document.getElementById('garden-sub').textContent = !active.length ?
+    'Füge deine erste Pflanze hinzu!' :
+    `${active.length} Pflanze${active.length>1?'n':''} im Garten`;
+
+  const grid = document.getElementById('dash-grid');
+  if (!active.length) {
+    grid.innerHTML='<div style="grid-column:1/-1"><div class="es"><div class="es-em">🪴</div><div class="es-t">Dein Garten wartet</div><div class="es-s">Füge deine erste Pflanze hinzu und behalte den Überblick über Pflanzung, Pflege und Ernte.</div></div></div>';
+    return;
+  }
+
+  const today = todayS();
+  grid.innerHTML = active.map(p => {
+    const pct = growthPct(p), dtw = daysToWater(p), inH = isHarvestActive(p,today);
+    let chip = '';
+    if (inH) chip='<span class="chip harvest">🌾 Erntezeit!</span>';
+    else if (dtw===0) chip='<span class="chip now">💧 Jetzt gießen</span>';
+    else if (dtw===1) chip='<span class="chip soon">💧 Morgen</span>';
+    else if (dtw!==null) chip=`<span class="chip ok">💧 In ${dtw}d</span>`;
+    const gLbl = pct<15?'Keimt':pct<45?'Wächst':pct<85?'Heranreifend':pct<100?'Fast reif':'Ernte!';
+    return `<div class="pc" onclick="openDet('${p.id}')">
+      <span class="pc-em">${p.emoji}</span>
+      <div class="pc-nm">${p.name}</div>
+      <div class="pc-vr">${p.variety||p.bed||'–'}</div>
+      <div class="gbar">
+        <div class="gbar-lbl"><span>🌱</span><span>${gLbl} ${pct}%</span></div>
+        <div class="gbar-track"><div class="gbar-fill" style="width:${pct}%"></div></div>
+      </div>${chip}</div>`;
+  }).join('');
+  updateBadge();
+}
+
+// ============================================================
+// RENDER: CALENDAR
+// ============================================================
+function renderCal() {
+  document.getElementById('cal-mo').textContent=`${MONTHS[calMonth]} ${calYear}`;
+  const today = todayS(), grid = document.getElementById('cal-grid');
+  let html = DAYS.map(d=>`<div class="cal-dh">${d}</div>`).join('');
+
+  const first = new Date(calYear,calMonth,1);
+  let dow = first.getDay(); if(dow===0)dow=7; dow--;
+  const dim = new Date(calYear,calMonth+1,0).getDate();
+  const pdim = new Date(calYear,calMonth,0).getDate();
+
+  for(let i=dow-1;i>=0;i--) html+=`<div class="cday faded empty"><div class="cdn">${pdim-i}</div></div>`;
+
+  for(let d=1;d<=dim;d++){
+    const ds=`${calYear}-${p2(calMonth+1)}-${p2(d)}`;
+    const isT=ds===today, isS=ds===calSelDate;
+    let hasW=false, hasH=false;
+    plants.forEach(p=>{
+      if(p.status!=='active')return;
+      if(isWaterDay(p,ds))hasW=true;
+      if(p.harvestStart&&p.harvestEnd&&ds>=p.harvestStart&&ds<=p.harvestEnd)hasH=true;
+    });
+    const dots=(hasW||hasH)?`<div class="cdots">${hasW?'<div class="cdot w"></div>':''}${hasH?'<div class="cdot h"></div>':''}</div>`:'';
+    html+=`<div class="cday${isT?' today':''}${isS&&!isT?' sel':''}" onclick="calSelectDay('${ds}')"><div class="cdn">${d}</div>${dots}</div>`;
+  }
+
+  const total=dow+dim, trail=Math.ceil(total/7)*7-total;
+  for(let d=1;d<=trail;d++) html+=`<div class="cday faded empty"><div class="cdn">${d}</div></div>`;
+  grid.innerHTML=html;
+  renderCalEvs();
+}
+
+function calSelectDay(ds){calSelDate=ds;renderCal()}
+function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCal()}
+function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCal()}
+
+function renderCalEvs(){
+  const te=document.getElementById('cal-ev-t'), le=document.getElementById('cal-ev-list');
+  if(!calSelDate){te.textContent='Wähle einen Tag';le.innerHTML='<div class="no-ev">Tippe auf einen Tag, um Ereignisse zu sehen.</div>';return}
+  const d=parseD(calSelDate);
+  te.textContent=d.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const evs=eventsForDate(calSelDate);
+  le.innerHTML=!evs.length?'<div class="no-ev">Keine Ereignisse an diesem Tag.</div>':
+    evs.map(e=>`<div class="ev-row"><div class="ev-dot ${e.type}"></div><div class="ev-nm">${e.plant.emoji} ${e.plant.name}</div><div class="ev-tp">${e.label}</div></div>`).join('');
+}
+
+// ============================================================
+// RENDER: PLANTS
+// ============================================================
+function renderPlants(){
+  const le=document.getElementById('plant-list-el');
+  document.getElementById('plants-sub').textContent=`${plants.length} Pflanze${plants.length!==1?'n':''} insgesamt`;
+  if(!plants.length){le.innerHTML='<div class="es"><div class="es-em">🌱</div><div class="es-t">Noch keine Pflanzen</div><div class="es-s">Füge deine erste Pflanze über das + Symbol hinzu.</div></div>';return}
+  const today=todayS();
+  le.innerHTML='<div class="plist">'+plants.map(p=>{
+    const dtw=daysToWater(p);
+    let wi=isHarvestActive(p,today)?'🌾 Erntezeit':dtw===0?'💧 Heute gießen':dtw===1?'💧 Morgen gießen':dtw!==null?`💧 In ${dtw} Tagen`:'–';
+    return `<div class="pl-item" onclick="openDet('${p.id}')">
+      <div class="pl-em">${p.emoji}</div>
+      <div class="pl-info">
+        <div class="pl-nm">${p.name}${p.variety?` <span style="font-size:13px;font-weight:400;color:var(--t3)">${p.variety}</span>`:''}</div>
+        <div class="pl-mt">${p.bed?p.bed+' · ':''}${wi}</div>
+      </div>
+      <div class="pl-acts">
+        <button class="pl-ab" onclick="event.stopPropagation();openEdit('${p.id}')" title="Bearbeiten">✏️</button>
+        <button class="pl-ab del" onclick="event.stopPropagation();delPlant('${p.id}')" title="Löschen">🗑️</button>
+      </div>
+    </div>`;
+  }).join('')+'</div>';
+}
+
+// ============================================================
+// RENDER: TASKS
+// ============================================================
+function renderTasks(){
+  const le=document.getElementById('task-list-el');
+  const all=upcomingTasks(14);
+  const filtered=tFilter==='all'?all:tFilter==='water'?all.filter(t=>t.type==='water'):all.filter(t=>t.type==='harvest-start');
+  if(!filtered.length){
+    const k=tFilter==='water'?'Gieß-':tFilter==='harvest'?'Ernte-':'';
+    le.innerHTML=`<div class="es"><div class="es-em">✅</div><div class="es-t">Keine ${k}aufgaben</div><div class="es-s">In den nächsten 14 Tagen gibt es keine entsprechenden Aufgaben.</div></div>`;
+    return;
+  }
+  const today=todayS(), byDate={};
+  filtered.forEach(t=>{if(!byDate[t.date])byDate[t.date]=[];byDate[t.date].push(t)});
+  le.innerHTML=Object.entries(byDate).sort(([a],[b])=>a.localeCompare(b)).map(([ds,tasks])=>{
+    const dfi=tasks[0].dfi, d=parseD(ds);
+    const lbl=dfi===0?'<span>Heute</span>':dfi===1?'<span>Morgen</span>':`<span>${d.toLocaleDateString('de-DE',{weekday:'short',day:'numeric',month:'short'})}</span>`;
+    return `<div class="tds"><div class="tdl">${lbl}</div><div class="tl">${tasks.map(t=>`
+      <div class="ti ${t.type==='water'?'w':'h'}">
+        <div class="ti-ic ${t.type==='water'?'w':'h'}">${t.type==='water'?'💧':'🌾'}</div>
+        <div class="ti-info">
+          <div class="ti-name">${t.plant.emoji} ${t.plant.name}</div>
+          <div class="ti-sub">${t.type==='water'?`Gießen · alle ${t.plant.wateringInterval} Tage`:'Erntezeit beginnt'}</div>
+        </div>
+        ${t.type==='water'&&dfi===0?`<button class="ti-btn w" onclick="doWater('${t.plant.id}')">✓ Gegossen</button>`:''}
+      </div>`).join('')}</div></div>`;
+  }).join('');
+}
+
+function setFilter(btn){
+  tFilter=btn.dataset.f;
+  document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderTasks();
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function nav(view){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById(`v-${view}`).classList.add('on');
+  document.getElementById(`nb-${view}`).classList.add('on');
+  if(view==='dash')renderDash();
+  else if(view==='cal')renderCal();
+  else if(view==='plants')renderPlants();
+  else if(view==='tasks')renderTasks();
+}
+
+// ============================================================
+// MODALS
+// ============================================================
+function buildEmojiGrid(){
+  document.getElementById('emoji-grid').innerHTML=EMOJIS.map(e=>
+    `<button class="egbtn${e===selEm?' on':''}" onclick="pickEm('${e}',this)">${e}</button>`
+  ).join('');
+}
+function pickEm(e,btn){selEm=e;document.querySelectorAll('.egbtn').forEach(b=>b.classList.remove('on'));btn.classList.add('on')}
+
+function openAdd(){
+  selEm='🌱';
+  ['in-id','in-name','in-var','in-bed','in-sow','in-nt'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('in-pln').value=todayS();
+  document.getElementById('in-wtr').value='2';
+  document.getElementById('in-hs').value='';
+  document.getElementById('in-he').value='';
+  document.getElementById('mk-title').textContent='Neue Pflanze';
+  document.getElementById('del-btn').style.display='none';
+  buildEmojiGrid();
+  document.getElementById('plant-modal').classList.add('open');
+}
+
+function openEdit(id){
+  const p=plants.find(x=>x.id===id);if(!p)return;
+  selEm=p.emoji;
+  document.getElementById('in-id').value=p.id;
+  document.getElementById('in-name').value=p.name;
+  document.getElementById('in-var').value=p.variety||'';
+  document.getElementById('in-bed').value=p.bed||'';
+  document.getElementById('in-sow').value=p.sowDate||'';
+  document.getElementById('in-pln').value=p.plantDate||'';
+  document.getElementById('in-wtr').value=p.wateringInterval||2;
+  document.getElementById('in-hs').value=p.harvestStart||'';
+  document.getElementById('in-he').value=p.harvestEnd||'';
+  document.getElementById('in-nt').value=p.notes||'';
+  document.getElementById('mk-title').textContent='Pflanze bearbeiten';
+  document.getElementById('del-btn').style.display='block';
+  buildEmojiGrid();
+  document.getElementById('plant-modal').classList.add('open');
+}
+
+function closeMk(){document.getElementById('plant-modal').classList.remove('open')}
+
+function savePlant(){
+  const id=document.getElementById('in-id').value;
+  const name=document.getElementById('in-name').value.trim();
+  if(!name){document.getElementById('in-name').focus();return}
+  const plant={
+    id:id||uid(), emoji:selEm, name,
+    variety:document.getElementById('in-var').value.trim(),
+    bed:document.getElementById('in-bed').value.trim(),
+    sowDate:document.getElementById('in-sow').value||null,
+    plantDate:document.getElementById('in-pln').value||todayS(),
+    wateringInterval:parseInt(document.getElementById('in-wtr').value)||2,
+    lastWatered:todayS(),
+    harvestStart:document.getElementById('in-hs').value||null,
+    harvestEnd:document.getElementById('in-he').value||null,
+    notes:document.getElementById('in-nt').value.trim(),
+    status:'active'
+  };
+  if(id){
+    const orig=plants.find(p=>p.id===id);
+    if(orig)plant.lastWatered=orig.lastWatered;
+    plants=plants.map(p=>p.id===id?plant:p);
+  } else { plants.push(plant); }
+  saveData(); closeMk(); refresh();
+}
+
+function doDelete(){
+  const id=document.getElementById('in-id').value;
+  if(!id)return;
+  if(confirm('Diese Pflanze wirklich löschen?')){plants=plants.filter(p=>p.id!==id);saveData();closeMk();refresh()}
+}
+
+function delPlant(id){
+  if(confirm('Pflanze löschen?')){plants=plants.filter(p=>p.id!==id);saveData();refresh()}
+}
+
+// ============================================================
+// DETAIL MODAL
+// ============================================================
+function openDet(id){
+  const p=plants.find(x=>x.id===id);if(!p)return;
+  const pct=growthPct(p), dtw=daysToWater(p), inH=isHarvestActive(p,todayS());
+  const si=pct<20?0:pct<60?1:pct<100?2:3;
+  const sds=[{em:'🌱',l:'Gesät'},{em:'🌿',l:'Wächst'},{em:'🌾',l:'Reifend'},{em:'🍽️',l:'Ernte'}];
+  const stages=sds.map((s,i)=>`<div class="stg ${i<si?'done':''} ${i===si?'act':''}"><div class="stg-dot">${s.em}</div><div class="stg-lbl">${s.l}</div></div>`).join('');
+  const wSt=dtw===0?`<span style="color:var(--r500);font-weight:700">Heute!</span>`:dtw===1?`<span style="color:var(--o500);font-weight:600">Morgen</span>`:dtw>1?`In ${dtw} Tagen`:'–';
+
+  document.getElementById('det-box').innerHTML=`
+    <div class="mk-hdl"></div>
+    <div class="det-hdr">
+      <div class="det-em">${p.emoji}</div>
+      <div>
+        <div class="det-nm">${p.name}</div>
+        <div class="det-vr">${[p.variety,p.bed].filter(Boolean).join(' · ')||'Keine Angabe'}</div>
+        ${inH?'<span class="chip harvest" style="margin-top:8px;display:inline-flex">🌾 Jetzt ernten!</span>':''}
+      </div>
+    </div>
+    <div class="det-sec">
+      <div class="det-lbl">Wachstumsphase</div>
+      <div class="stages">${stages}</div>
+      <div class="gbar-track" style="margin-top:8px"><div class="gbar-fill" style="width:${pct}%"></div></div>
+      <div style="text-align:right;font-size:11px;color:var(--t4);margin-top:3px">${pct}% bis zur Ernte</div>
+    </div>
+    <div class="det-sec">
+      <div class="det-lbl">Termine</div>
+      <div class="det-row">
+        ${p.sowDate?`<div class="dic"><div class="dic-l">Aussaat</div><div class="dic-v">${fmtD(p.sowDate)}</div></div>`:''}
+        <div class="dic"><div class="dic-l">Gepflanzt</div><div class="dic-v">${fmtD(p.plantDate)}</div></div>
+        ${p.harvestStart?`<div class="dic"><div class="dic-l">Ernte ab</div><div class="dic-v">${fmtD(p.harvestStart)}</div></div>`:''}
+        ${p.harvestEnd?`<div class="dic"><div class="dic-l">Ernte bis</div><div class="dic-v">${fmtD(p.harvestEnd)}</div></div>`:''}
+      </div>
+    </div>
+    <div class="det-sec">
+      <div class="det-lbl">Bewässerung</div>
+      <div class="det-row">
+        <div class="dic"><div class="dic-l">Intervall</div><div class="dic-v">alle ${p.wateringInterval} Tage</div></div>
+        <div class="dic"><div class="dic-l">Zuletzt</div><div class="dic-v">${fmtD(p.lastWatered)}</div></div>
+        <div class="dic"><div class="dic-l">Nächstes Mal</div><div class="dic-v">${wSt}</div></div>
+      </div>
+    </div>
+    <div class="det-sec">
+      <div class="det-lbl">Notizen</div>
+      <div class="notes-box">${p.notes?p.notes.replace(/\n/g,'<br>'):'<span style="color:var(--t4);font-style:italic">Keine Notizen eingetragen</span>'}</div>
+    </div>
+    <button class="btn-p" style="background:var(--b500)" onclick="doWater('${p.id}');closeDet()">💧 Als gegossen markieren</button>
+    <button class="btn-s" onclick="closeDet();openEdit('${p.id}')">✏️ Pflanze bearbeiten</button>
+  `;
+  document.getElementById('det-modal').classList.add('open');
+}
+
+function closeDet(){document.getElementById('det-modal').classList.remove('open')}
+
+// ============================================================
+// ACTIONS
+// ============================================================
+function doWater(id){
+  plants=plants.map(p=>p.id===id?{...p,lastWatered:todayS()}:p);
+  saveData(); refresh(); updateBadge();
+}
+
+function updateBadge(){
+  const n=todayTasks().length, b=document.getElementById('task-bdg');
+  b.textContent=n; b.style.display=n?'flex':'none';
+}
+
+function refresh(){
+  const v=document.querySelector('.view.on')?.id;
+  if(v==='v-dash')renderDash();
+  else if(v==='v-cal')renderCal();
+  else if(v==='v-plants')renderPlants();
+  else if(v==='v-tasks')renderTasks();
+  updateBadge();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+function init(){
+  const now=new Date();
+  document.getElementById('hdrDate').innerHTML=`${DLONG[now.getDay()]}<br>${now.toLocaleDateString('de-DE',{day:'2-digit',month:'short',year:'numeric'})}`;
+  loadData();
+  calSelDate=todayS();
+  renderDash();
+  updateBadge();
+}
+
+
+
+
+init();
+</script>
+</body>
+</html>
